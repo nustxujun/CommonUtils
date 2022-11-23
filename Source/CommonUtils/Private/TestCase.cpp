@@ -1,29 +1,33 @@
 #include "CommonUtils.h"
 
-#define RUN_TEST 0
+#define RUN_TEST 1
 
 #if RUN_TEST
-#pragma optimize("",off)
+#pragma optimize("", off)
 
-static int TestCase = []() {
-    TArray<int> Array = {3,2,1};
-    for (auto Item : XRange(Array))
-    { 
-        UE_LOG(LogTemp, Warning, TEXT("Index: %d, Value: %d"), Item.Key, Item.Value);        
-    }
-
-    for (auto i : XRange(100,1,-2))
+static int TestCase = []()
+{
+    // XRange
     {
-        UE_LOG(LogTemp, Warning, TEXT("Index: %d"), i);        
+        TArray<int> Array = {3, 2, 1};
+        for (auto Item : XRange(Array))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Index: %d, Value: %d"), Item.Key, Item.Value);
+        }
+
+        for (auto i : XRange(100, 1, -2))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Index: %d"), i);
+        }
     }
 
-    // visit a excel file
+    // Excel Utils
     auto ExcelFile = UExcelFile::CreateExcelFile(TEXT("G:/Test.xlsx"));
     auto Sheet = ExcelFile->AddSheet(TEXT("TestSheet"));
     ExcelFile->AddRow(Sheet, 1, {TEXT("Col1"), TEXT("Col2")});
     ExcelFile->Save();
 
-
+    // Property Utils
     auto Actor = NewObject<AActor>();
     auto Wrapper = UPUObjectWrapper::Create(Actor, FPropertyFilters::NoFiltering);
     // access private member
@@ -33,8 +37,43 @@ static int TestCase = []() {
 
     ensure(Actor->CanBeDamaged() == !bCanBeDamaged);
 
+    // Object Pool
+    {
+        auto Pool = FNormalObjectPool<int>();
+        TArray<int *> Array = {
+            Pool.Create(),
+            Pool.Create(),
+        };
+        for (auto i: Array)
+            Pool.Destroy(i);
+    }
+
+    {
+        auto Pool = FFixedObjectPool<int, 1>();
+        TArray<int*> Array = {
+            Pool.Create(),
+            Pool.Create(),
+        };
+        for (auto i : Array)
+            Pool.Destroy(i);
+    }
+
+    {
+        struct Data
+        {
+            uint64 a[8];
+
+        };
+        auto Pool = FFlatObjectPool<Data>();
+        TArray<Data*> Array = {
+            Pool.Create(),
+            Pool.Create(),
+        };
+        for (auto i : Array)
+            Pool.Destroy(i);
+    }
     return 0;
 }();
 
-#pragma optimize("",on)
+#pragma optimize("", on)
 #endif

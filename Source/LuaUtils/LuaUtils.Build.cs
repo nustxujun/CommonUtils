@@ -3,10 +3,10 @@
 using UnrealBuildTool;
 using System;
 using System.IO;
-public class CommonUtils : ModuleRules
+public class LuaUtils : ModuleRules
 {
 
-	public CommonUtils(ReadOnlyTargetRules Target) : base(Target)
+	public LuaUtils(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
@@ -29,8 +29,7 @@ public class CommonUtils : ModuleRules
 			{
 				"Core",
 				"PropertyUtils",
-				"ExcelUtils",
-				"ObjectPool"
+				"ExcelUtils"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -41,6 +40,7 @@ public class CommonUtils : ModuleRules
 			{
 				"CoreUObject",
 				"Engine",
+				"ExcelUtils"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
