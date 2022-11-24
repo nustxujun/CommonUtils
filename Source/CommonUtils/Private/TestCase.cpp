@@ -1,6 +1,6 @@
 #include "CommonUtils.h"
 
-#define RUN_TEST 1
+#define RUN_TEST 0 && WITH_EDITOR
 
 #if RUN_TEST
 #pragma optimize("", off)
@@ -59,13 +59,19 @@ static int TestCase = []()
     }
 
     {
-        struct Data
-        {
-            uint64 a[8];
-
+        auto Pool = FFlatObjectPool<int>();
+        TArray<int*> Array = {
+            Pool.Create(),
+            Pool.Create(),
         };
-        auto Pool = FFlatObjectPool<Data>();
-        TArray<Data*> Array = {
+        for (auto i : Array)
+            Pool.Destroy(i);
+    }
+
+    {
+        // auto shrink
+        auto Pool = FFlatObjectPool<int,1, true>();
+        TArray<int*> Array = {
             Pool.Create(),
             Pool.Create(),
         };

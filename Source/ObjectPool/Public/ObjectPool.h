@@ -33,9 +33,6 @@ public:
             FreeList = *(void**)FreeList;
             FMemory::Free(Current);
         }
-#if ENABLE_OBJECTS_CHECK
-        TotalObjects.Empty();
-#endif
     }
 
     template<class ... Args>
@@ -179,12 +176,14 @@ private:
 
 /*
     dynamic size and cache friendly
+    can be collected by gc
 */
 
 template<class Type>
 CONSTEXPR FORCEINLINE int GetCountOnCacheLine()
 {
     constexpr int CacheLineSize = 64;
+    // use for unshrink pool
     using ObjectType = union{Type Obj; void* Next;};
     constexpr auto Count = CacheLineSize  / sizeof(ObjectType);
 #if PLATFORM_COMPILER_HAS_IF_CONSTEXPR
@@ -197,12 +196,11 @@ CONSTEXPR FORCEINLINE int GetCountOnCacheLine()
         return 16; 
 }
 
-/*
-    used for 
-*/
+template<class Type, int CountPerChunk = GetCountOnCacheLine<Type>(), bool AutoShrink = false>
+class FFlatObjectPool;
 
-template<class Type, int CountPerChunk = GetCountOnCacheLine<Type>()>
-class FFlatObjectPool
+template<class Type, int CountPerChunk>
+class FFlatObjectPool<Type, CountPerChunk, false>
 {
     union ObjectType
     {
@@ -272,5 +270,139 @@ private:
     void* FreeList = nullptr;
 
     int NumAllocated = 0;
+
+};
+
+
+
+template<class Type, int CountPerChunk>
+class FFlatObjectPool<Type, CountPerChunk, true>: public FGCObject
+{
+    struct ObjectType
+    {
+        uint64 Index;
+        union
+        {
+            Type Obj;
+            void* Next;
+        };
+    };
+
+
+    struct Chunk
+    {
+        void* Memory;
+        void* FreeList;
+        int NumAllocated;
+    };
+public:
+    ~FFlatObjectPool()
+    {
+        for (auto& Chunk : Chunks)
+        {
+            ensure(Chunk.NumAllocated == 0);
+        }
+
+        DiscardUnused();
+    }
+
+    template<class ... Args>
+    Type* Create(Args&& ... InArgs)
+    {
+        void* Current;
+        Chunk* AllocatedChunk = nullptr;
+        for (auto& Chunk : Chunks)
+        {
+            if (Chunk.FreeList)
+            {
+                AllocatedChunk = &Chunk;
+            }
+        }
+
+        if (AllocatedChunk == nullptr)
+        {
+            AllocatedChunk = &NewChunk();
+        }
+
+        Current = AllocatedChunk->FreeList;
+        AllocatedChunk->FreeList = *(void**)Current;
+        AllocatedChunk->NumAllocated++;
+
+#if ENABLE_OBJECTS_CHECK
+        TotalObjects.Add(Current);
+#endif
+        return new (Current) Type(Forward<Args>(InArgs) ...);
+    }
+
+
+    void Destroy(Type* Obj)
+    {
+#if ENABLE_OBJECTS_CHECK
+        ensure(TotalObjects.Contains(Obj));
+        TotalObjects.Remove(Obj);
+#endif
+        Obj->~Type();
+        
+        auto Index = (uint64*)Obj - 1;
+        auto& Chunk = Chunks[*Index];
+        *(void**)Obj = Chunk.FreeList;
+        Chunk.FreeList = Obj;
+        Chunk.NumAllocated--;
+        ensure(Chunk.NumAllocated >= 0);
+    }
+
+    virtual void AddReferencedObjects(FReferenceCollector& Collector) override
+    {
+        DiscardUnused();
+    }
+
+
+    void DiscardUnused()
+    {
+        TArray<int> RemoveList;
+        int Count = Chunks.Num();
+        for (int i = Count - 1; i >= 0; --i)
+        {
+            if (Chunks[i].NumAllocated == 0)
+            {
+                RemoveList.Add(i);
+            }
+        }
+
+        for (auto i : RemoveList)
+        {
+            FMemory::Free(Chunks[i].Memory);
+            Chunks.RemoveAt(i,1,false);
+        }
+
+    }
+private:
+    Chunk& NewChunk()
+    {
+        auto Mem = FMemory::Malloc(sizeof(ObjectType) * CountPerChunk, 8); 
+        Chunks.AddUninitialized();
+        auto Index = Chunks.Num() - 1;
+        auto& Chunk = Chunks[Index];
+        Chunk.Memory = Mem;
+        Chunk.FreeList = nullptr;
+        Chunk.NumAllocated = 0;
+
+        for (int i = 0; i < CountPerChunk; i++)
+        {
+            *(uint64*)Mem = Index;
+            ((ObjectType*)Mem)->Next = Chunk.FreeList;
+            Chunk.FreeList = (uint64*)Mem + 1;
+            Mem = (ObjectType*)Mem + 1;
+        }
+        return Chunk;
+    }
+
+private:
+#if ENABLE_OBJECTS_CHECK
+    TSet<void*> TotalObjects;
+#endif
+
+
+    TArray<Chunk> Chunks;
 
 };

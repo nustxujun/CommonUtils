@@ -73,8 +73,7 @@ ObjectPool
 Help to reduce the memory allocation
 
 
-- one of them used for UObject
-- three different of them used for normal object
-	1. dynamic size pool which can be collected by gc , but is not cache-friendly
-	2. fixed size pool used for efficient and stable enviorment, but waste memory
-	3. normal dynamic size pool
+- ``FFastUObjectPool``, a pool used for UObject
+- ``FNormalObjectPool``, a dynamic size pool which can be collected by gc , good for memory usage
+- ``FFixedObjectPool``, a fixed size pool , cache friendy
+- ``FFlatObjectPool``, a balance between cache friendly and memory usage
