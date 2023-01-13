@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 
-#define ENABLE_OBJECTS_CHECK WITH_EDITOR || UE_BUILD_DEBUG || UE_BUILD_TEST
+#define ENABLE_OBJECTS_CHECK WITH_EDITOR || UE_BUILD_DEBUG || UE_BUILD_DEVELOPMENT
 
 
 
@@ -15,13 +15,13 @@ class FNormalObjectPool: public FGCObject
 {
     union ObjectType
     {
-        Type Obj;
         void* Next;
+        char Obj[sizeof(Type)];
     };
 public:
     ~FNormalObjectPool()
     {
-        ensure(NumAllocated == 0);
+        check(NumAllocated == 0);
         DiscardUnused();
     }
 
@@ -51,7 +51,7 @@ public:
         }
 
 #if ENABLE_OBJECTS_CHECK
-        ensure(!TotalObjects.Contains(Current));
+        check(!TotalObjects.Contains(Current));
         TotalObjects.Add(Current);
 #endif
 
@@ -61,14 +61,14 @@ public:
     void Destroy(Type* Obj)
     {
 #if ENABLE_OBJECTS_CHECK
-        ensure(TotalObjects.Contains(Obj));
+        check(TotalObjects.Contains(Obj));
         TotalObjects.Remove(Obj);
 #endif
         Obj->~Type();
         *(void**)Obj = FreeList;
         FreeList = Obj;
         NumAllocated--;
-        ensure(NumAllocated >= 0);
+        check(NumAllocated >= 0);
     }
 
 
@@ -98,8 +98,8 @@ class FFixedObjectPool
 {
     union ObjectType
     {
-        Type Obj;
         void* Next;
+        char Obj[sizeof(Type)];
     };
 public:
     FFixedObjectPool()
@@ -115,7 +115,7 @@ public:
 
     ~FFixedObjectPool()
     {   
-        ensure(NumAllocated == 0);
+        check(NumAllocated == 0);
         FMemory::Free(Pool);
     }
 
@@ -145,7 +145,7 @@ public:
     void Destroy(Type* Obj)
     {
 #if ENABLE_OBJECTS_CHECK
-        ensure(TotalObjects.Contains(Obj));
+        check(TotalObjects.Contains(Obj));
         TotalObjects.Remove(Obj);
 #endif
         Obj->~Type();
@@ -160,7 +160,7 @@ public:
             FreeList = Obj;
         }
         NumAllocated--;
-        ensure(NumAllocated >= 0);
+        check(NumAllocated >= 0);
     }
 
 private:
@@ -204,13 +204,13 @@ class FFlatObjectPool<Type, CountPerChunk, false>
 {
     union ObjectType
     {
-        Type Obj;
         void* Next;
+        char Obj[sizeof(Type)];
     };
 public:
     ~FFlatObjectPool()
     {   
-        ensure(NumAllocated == 0);
+        check(NumAllocated == 0);
         
         for(auto& Chunk : Chunks)
             FMemory::Free(Chunk);
@@ -252,14 +252,14 @@ public:
     void Destroy(Type* Obj)
     {
 #if ENABLE_OBJECTS_CHECK
-        ensure(TotalObjects.Contains(Obj));
+        check(TotalObjects.Contains(Obj));
         TotalObjects.Remove(Obj);
 #endif
         Obj->~Type();
         *(void**)Obj = FreeList;
         FreeList = Obj;
         NumAllocated--;
-        ensure(NumAllocated >= 0);
+        check(NumAllocated >= 0);
     }
 private:
 #if ENABLE_OBJECTS_CHECK
@@ -283,8 +283,8 @@ class FFlatObjectPool<Type, CountPerChunk, true>: public FGCObject
         uint64 Index;
         union
         {
-            Type Obj;
             void* Next;
+            char Obj[sizeof(Type)];
         };
     };
 
@@ -300,7 +300,7 @@ public:
     {
         for (auto& Chunk : Chunks)
         {
-            ensure(Chunk.NumAllocated == 0);
+            check(Chunk.NumAllocated == 0);
         }
 
         DiscardUnused();
@@ -338,7 +338,7 @@ public:
     void Destroy(Type* Obj)
     {
 #if ENABLE_OBJECTS_CHECK
-        ensure(TotalObjects.Contains(Obj));
+        check(TotalObjects.Contains(Obj));
         TotalObjects.Remove(Obj);
 #endif
         Obj->~Type();
@@ -348,7 +348,7 @@ public:
         *(void**)Obj = Chunk.FreeList;
         Chunk.FreeList = Obj;
         Chunk.NumAllocated--;
-        ensure(Chunk.NumAllocated >= 0);
+        check(Chunk.NumAllocated >= 0);
     }
 
     virtual void AddReferencedObjects(FReferenceCollector& Collector) override
