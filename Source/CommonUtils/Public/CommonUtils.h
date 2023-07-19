@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 
 #include "Range.h"
+#include "Any.h"
+#include "Promise.h"
 #include "PropertyUtils.h"
 #include "ExcelUtils.h"
 

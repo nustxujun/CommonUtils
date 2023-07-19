@@ -142,11 +142,10 @@ TIteratorRange<TXRangeIterator<T>> XRange(T From, T To, T Step)
 }
 
 /*
-* Array Range
 * example:
 * 
 *	TArray<FString> StringList = {"1", "2"};
-*	for (auto Elem : ArrayRange(StringList))
+*	for (auto Elem : XRange(StringList))
 *	{
 *		auto Index = Elem.Key;
 *		auto Str = Elem.Value;
@@ -157,14 +156,14 @@ template<class T>
 class TArrayRangeIterator
 {
 public:
-	TArrayRangeIterator(const TArray<T>& InArray, int32 InIndex) :
+	TArrayRangeIterator(const TArray<T>& InArray, size_t InIndex) :
 		Array(InArray),Index(InIndex)
 	{
 	}
 
-	TPair<int32, const T&> operator*()const
+	TPair<size_t, const T&> operator*()const
 	{
-		return TPair<int32, const T&>{ Index , Array[Index] };
+		return TPair<size_t, const T&>{ Index , Array[Index] };
 	}
 
 	bool operator !=(const TArrayRangeIterator& Other)
@@ -179,11 +178,47 @@ public:
 
 private:
 	const TArray<T>& Array;
-	int32 Index = 0;
+	size_t Index = 0;
 };
+
+template<class T>
+class TNativeArrayRangeIterator
+{
+public:
+	TNativeArrayRangeIterator(const T* InArray, size_t InIndex) :
+		Array(InArray), Index(InIndex)
+	{
+	}
+
+	TPair<size_t, const T&> operator*()const
+	{
+		return TPair<size_t, const T&>{ Index, Array[Index] };
+	}
+
+	bool operator !=(const TNativeArrayRangeIterator& Other)
+	{
+		return Index != Other.Index;
+	}
+
+	void operator++()
+	{
+		Index++;
+	}
+
+private:
+	const T* Array;
+	size_t Index = 0;
+};
+
 
 template<class T>
 TIteratorRange<TArrayRangeIterator<T>> XRange(const TArray<T>& InArray)
 {
-	return { {InArray, 0}, {InArray, InArray.Num()} };
+	return { {InArray, 0}, {InArray, (size_t)InArray.Num()} };
+}
+
+template<class T, size_t Num>
+TIteratorRange<TNativeArrayRangeIterator<T>> XRange(const T(&InArray)[Num])
+{
+	return { {InArray, 0}, {InArray, Num} };
 }

@@ -61,12 +61,16 @@ public class ExcelUtils : ModuleRules
 			// include
 			PublicIncludePaths.Add(IncludePath);
 
-			// static library
-			PublicLibraryPaths.Add(LibPath);
-			PublicAdditionalLibraries.Add(Path.Combine(LibPath,"libxl.lib"));
+#if UE_4_27_OR_LATER
+			PublicSystemLibraryPaths.Add(LibPath);
+            PublicSystemLibraryPaths.Add(DllPath);
+#else
+            PublicLibraryPaths.Add(LibPath);
+            PublicLibraryPaths.Add(DllPath);
+#endif
+            PublicAdditionalLibraries.Add(Path.Combine(LibPath,"libxl.lib"));
 
-			// dynamic library
-			PublicLibraryPaths.Add(DllPath);
+
 
 			//PublicDelayLoadDLLs.Add("libxl.dll");
 			//RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(DllPath, "libxl.dll")));

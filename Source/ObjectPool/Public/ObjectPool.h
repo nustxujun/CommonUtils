@@ -186,7 +186,7 @@ CONSTEXPR FORCEINLINE int GetCountOnCacheLine()
     // use for unshrink pool
     using ObjectType = union{Type Obj; void* Next;};
     constexpr auto Count = CacheLineSize  / sizeof(ObjectType);
-#if PLATFORM_COMPILER_HAS_IF_CONSTEXPR
+#if ENGINE_MAJOR_VERSION >= 5
     if constexpr(Count > 0 && sizeof(ObjectType) != CacheLineSize)
 #else
     if (Count > 0 && sizeof(ObjectType) != CacheLineSize)
