@@ -383,9 +383,9 @@ public:
 
 
 	template< class ArgumentType, class ReturnType>
-	FPromise Then(ReturnType(*OnResolved)(ArgumentType), std::function<void(int)>&& OnRejected = {}) const
+	FPromise Then(ReturnType(*OnResolved)(ArgumentType), TFunction<void(int)>&& OnRejected = {}) const
 	{
-		return Then(FAny(std::function<ReturnType(ArgumentType)>(OnResolved)),std::move( OnRejected));
+		return Then(FAny(TFunction<ReturnType(ArgumentType)>(OnResolved)), MoveTemp(OnRejected));
 	}
 
 

@@ -79,6 +79,7 @@ bool FPropertyUtilTest::RunTest(const FString& Parameters)
     Prop->SetValue(!bCanBeDamaged);
 
     return Actor->CanBeDamaged() == !bCanBeDamaged;
+	return true;
 };
 
 
