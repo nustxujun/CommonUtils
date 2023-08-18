@@ -250,5 +250,20 @@ bool FPromiseTest::RunTest(const FString& Parameters)
 
 	}
 
+	{
+		int State = 0;
+		auto step1 = FPromise::New();
+		auto step2 = FPromise::New();
+		auto step3 = FPromise::New();
+		step1.Then([]() {}, {});
+		step2.Then([]() {}, {});
+		step3.Then([]() {}, [&](int Code) {
+			State = Code;
+			});
+		step1.Then(step2).Then(step3);
+		step1.Reject(-1);
+		ensure(State == -1);
+	}
+
 	return true;
 }

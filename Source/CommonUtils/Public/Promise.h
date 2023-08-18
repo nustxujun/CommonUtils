@@ -109,6 +109,21 @@ class FPromise
 		{
 			if (Holder->OnRejected)
 				Holder->OnRejected(Code);
+			else
+			{
+				// transfer error to the first callback
+				auto Next = Holder->Next;
+				while (Next)
+				{
+					if (Next->OnRejected)
+					{
+						Next->OnRejected(Code);
+						break;
+					}
+					else
+						Next = Next->Next;
+				}
+			}
 		}
 
 		void Reset()
