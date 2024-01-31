@@ -109,7 +109,7 @@ bool FAnyTest::RunTest(const FString& Parameters)
     auto Lambda = [](){
         return 1;
     };
-    Any = Lambda;
+    Any = TFunction<void()>(Lambda);
     CHECK_RESULT(TTypeId<decltype(Lambda)>() == Any.Type());
 
 

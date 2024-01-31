@@ -19,9 +19,8 @@ inline uint64 TTypeId()
 
 template<class T>
 struct TRemoveCVRef {
-	typedef typename TRemoveCV<typename TRemoveReference<T>::Type>::Type Type;
+	typedef typename std::remove_cv_t<typename TRemoveReference<T>::Type> Type;
 };
-
 
 class FAny;
 template<class T>
@@ -160,37 +159,37 @@ inline T AnyCast(const FAny& Operand)
 }
 
 #if ENABLE_ANY_HASHABLE
+
 // stop hash TFunction
 template<class FuncType>
 class FAny::PlaceHolder<TFunction<FuncType>> : public FAny::PlaceHolderBase
 {
 	using ValueType = TFunction<FuncType>;
 public:
-	PlaceHolder(ValueType InValue) :
-		Value(MoveTemp(InValue))
-	{}
-
-	virtual uint64 Type()const override
-	{
-		return TTypeId<ValueType>();
-	}
-
+	PlaceHolder(ValueType InValue) : Value(MoveTemp(InValue)) {}
+	virtual uint64 Type()const override { return TTypeId<ValueType>(); }
 	virtual PlaceHolderBase* Clone()const override { return new PlaceHolder(Value); }
-
-	virtual uint32 Hash()const
-	{
-		return 0;
-	}
-
-	virtual bool Equal(const PlaceHolderBase* Other)const
-	{
-		return false;
-	}
-
+	virtual uint32 Hash()const { return 0; }
+	virtual bool Equal(const PlaceHolderBase* Other)const { return false; }
 public:
 	ValueType Value;
-
 };
+
+// stop hash std::function
+template<class FuncType>
+class FAny::PlaceHolder<std::function<FuncType>> : public FAny::PlaceHolderBase
+{
+	using ValueType = std::function<FuncType>;
+public:
+	PlaceHolder(ValueType InValue) : Value(MoveTemp(InValue)) {}
+	virtual uint64 Type()const override { return TTypeId<ValueType>(); }
+	virtual PlaceHolderBase* Clone()const override { return new PlaceHolder(Value); }
+	virtual uint32 Hash()const { return 0; }
+	virtual bool Equal(const PlaceHolderBase* Other)const { return false; }
+public:
+	ValueType Value;
+};
+
 
 struct FAnyHashable
 {

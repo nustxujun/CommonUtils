@@ -80,7 +80,7 @@ public:
 	virtual void Assign(Ptr Other);
 private:
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
-
+	virtual FString GetReferencerName() const { return "FPUProperty"; }
 protected:
 	UPUObjectWrapper* Wrapper = nullptr; 
 	const FProperty* Property = nullptr;

@@ -15,6 +15,8 @@ public:
 	UPooledObject* Create();
 	void Destroy(UPooledObject* Obj);
 	virtual void AddReferencedObjects(FReferenceCollector& Collector) override;
+	virtual FString GetReferencerName() const {return "FastUObjectPool"; }
+
 private:
 	void DiscardUnusedObjects();
 private:

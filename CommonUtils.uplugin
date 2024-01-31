@@ -19,6 +19,11 @@
 			"Name": "CommonUtils",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "DatabaseLite",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	]
 }
